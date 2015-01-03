@@ -118,6 +118,7 @@ FILE_EXTS = {
     "svg":           "Scalable Vector Graphic",
     "tar":           "Tar Archive",
     "tgz":           "Tarball",
+    "trash":         "Trash",
     "ttc":           "TrueType Font Collection",
     "ttf":           "TrueType Font",
     "txt":           "Plain Text",
@@ -130,7 +131,7 @@ FILE_EXTS = {
     "xml":           "XML File",
     "yml":           "YML File",
     "z":             "Compressed Archive",
-    "zip":           "Zip Archive"
+    "zip":           "Zip Archive",
 }
 
 # Maps major type groups to extensions.
@@ -156,7 +157,8 @@ _TYPE_GROUPS = {
                  license md odf odp ods odt pages pdf pps ppsx ppt pptx
                  readme rst rtf txt version xls xlsx xlt xltx yml
                  """,
-    "video":     "avi m4v mov mp4"
+    "trash":     "trash",
+    "video":     "avi m4v mov mp4",
 }
 # Flip the dict and split extension strings.
 TYPE_GROUPS = {}
@@ -177,8 +179,18 @@ GROUP_ICONS = {
     "git":       (None,              "ionicons-social-github-32"),
     "image":     ("Image File",      "ionicons-image-32"),
     "text":      ("Plain Text File", "ionicons-document-text-32"),
+    "trash":     ("Trash",           "ionicons-folder-32"),
     "video":     ("Video File",      "ionicons-ios7-film-outline-32"),
 }
+
+# Trash icon only exists in 1.6
+try:
+    import dialogs
+except ImportError:
+    pass
+else:
+    GROUP_ICONS["trash"] = ("Trash", "../FolderTrash")
+
 # Replace icon paths with ui.Image instances.
 GROUP_ICONS = {k: (v[0], ui.Image.named(v[1]))
                for k, v in GROUP_ICONS.iteritems()}

@@ -29,6 +29,7 @@ import ui          # For various utility functions
 import webbrowser  # To display HTML files
 
 from filenav import filetypes # File type names and mappings
+assert reload(filetypes) # Development/testing only
 
 def full_path(path):
     u"""Return absolute path with expanded ~s, envvars and symlinks.
@@ -48,7 +49,7 @@ SIZE_SUFFIXES = u"bytes KiB MiB GiB TiB PiB EiB ZiB YiB".split()
 # Delay (in seconds) to wait between conflicting animations that would
 # otherwise cause Pythonista to hang. This happens for example when a view
 # fades out while the quick look window appears.
-ANIM_DELAY = 0.5
+ANIM_DELAY = 0.7
 
 HOME_DIR = full_path(u"~")
 DOCS_DIR = os.path.join(HOME_DIR, u"Documents")
@@ -175,7 +176,7 @@ def get_fileinfo(path):
             desc = filetypes.GROUP_ICONS[basegroup][0]
     
     # Folders should only get certain file types applied
-    if basegroup == "folder" and ext not in ("app", "bundle", "git"):
+    if basegroup == "folder" and ext not in ("app", "bundle", "git", "trash"):
         desc, icon = filetypes.GROUP_ICONS[basegroup]
     
     return FileInfo(dir, name, nameparts, ext, group, desc, icon)
@@ -768,6 +769,7 @@ def make_favs_list(app, src):
     lst.data_source = lst.delegate = FavoritesDataSource(src, app)
     lst.name = u"Favorites"
     lst.right_button_items = ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
+    lst.width = 300
     return lst
 
 def make_file_list(app, fi):
@@ -782,6 +784,7 @@ def make_file_list(app, fi):
     lst.data_source = lst.delegate = FileDataSource(fi, app)
     lst.name = u"/" if fi.path == u"/" else fi.basename()
     lst.right_button_items = ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
+    lst.width = 300
     return lst
 
 def make_stat_view(app, fi):
@@ -795,4 +798,5 @@ def make_stat_view(app, fi):
     lst.background_color = 1.0
     lst.data_source = lst.delegate = StatDataSource(fi, app)
     lst.name = u"/" if fi.path == u"/" else fi.basename()
+    lst.width = 300
     return lst
