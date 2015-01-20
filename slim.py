@@ -19,7 +19,8 @@ import ui       # Guess why
 from filenav import common
 assert reload(common) # Development/testing only
 
-MODE = "popover"
+MODE = "panel"
+##MODE = "popover" # For testing on iPad
 
 class SlimFilenavApp(common.FilenavApp):
     def push_view(self, view):
