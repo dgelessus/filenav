@@ -57,6 +57,14 @@ class FullFilenavApp(common.FilenavApp):
             nav.x = 0
         
         self.scroll.content_size = nav.x + nav.width, self.scroll.height
+        
+        # Automatically scroll to the newly pushed view if appropriate
+        if (
+            self.scroll.content_size[0] > self.scroll.width
+            and self.scroll.content_offset[0] >= nav.x - self.scroll.width - 1
+        ):
+            self.scroll.content_offset = nav.x + nav.width - self.scroll.width, 0
+        
         self.scroll.add_subview(nav)
         self.nav_stack.append(nav)
     
