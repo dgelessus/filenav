@@ -15,7 +15,7 @@ def main(args):
     if ui.get_screen_size()[0] >= 768:
         from filenav import full
         full.main(args)
-    elxe:
+    else:
         from filenav import slim
         slim.main(args)
 
