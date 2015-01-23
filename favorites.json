@@ -12,7 +12,7 @@
         "User Home"
     ], 
     [
-        "$PYTHONISTA_APP", 
+        "$APPDIR", 
         "Pythonista App Bundle"
     ]
 ]

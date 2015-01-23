@@ -17,7 +17,7 @@ import sys      # For runtime arguments
 import ui       # Guess why
 
 from filenav import common
-assert reload(common) # Development/testing only
+##assert reload(common) # Development/testing only
 
 MODE = "panel"
 
@@ -88,11 +88,10 @@ def main(args):
     fnapp = FullFilenavApp()
     fnapp.root.present(MODE, hide_title_bar=True)
     
-    lst = common.make_favs_list(fnapp, common.full_path("./favorites.json"))
-    fnapp.push_view(lst)
+    fnapp.push_view(fnapp.make_favs_list(common.full_path("./favorites.json")))
     
     if ns.dir:
-        fnapp.push_view(common.make_file_list(fnapp, common.FileItem(ns.dir)))
+        fnapp.push_view(fnapp.make_file_list(common.FileItem(ns.dir)))
     
     sys.exit(0)
 

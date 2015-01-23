@@ -17,7 +17,7 @@ import sys      # For runtime arguments
 import ui       # Guess why
 
 from filenav import common
-assert reload(common) # Development/testing only
+##assert reload(common) # Development/testing only
 
 MODE = "panel"
 ##MODE = "popover" # For testing on iPad
@@ -25,6 +25,9 @@ MODE = "panel"
 class SlimFilenavApp(common.FilenavApp):
     def push_view(self, view):
         return self.root.push_view(view)
+    
+    def pop_view(self):
+        return self.root.pop_view()
 
 def main(args):
     global fnapp # Technically not necessary, but useful for testing
@@ -36,11 +39,13 @@ def main(args):
     
     fnapp = SlimFilenavApp()
     
-    lst = common.make_favs_list(fnapp, common.full_path("./favorites.json"))
-    lst.left_button_items = ui.ButtonItem(
-        image=ui.Image.named("ionicons-close-24"),
-        action=(lambda sender: fnapp.close()),
-    ), # Needs to be a tuple
+    lst = fnapp.make_favs_list(common.full_path("./favorites.json"))
+    lst.left_button_items = (
+        ui.ButtonItem(
+            image=ui.Image.named("ionicons-close-24"),
+            action=(lambda sender: fnapp.close()),
+        ),
+    )
     
     fnapp.root = ui.NavigationView(lst)
     fnapp.root.navigation_bar_hidden = False
@@ -49,7 +54,7 @@ def main(args):
         fnapp.root.height = 1000
     
     if ns.dir:
-        fnapp.push_view(common.make_file_list(fnapp, common.FileItem(ns.dir)))
+        fnapp.push_view(fnapp.make_file_list(common.FileItem(ns.dir)))
     
     fnapp.root.present(MODE, hide_title_bar=True)
     

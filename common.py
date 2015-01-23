@@ -29,7 +29,7 @@ import ui          # For various utility functions
 import webbrowser  # To display HTML files
 
 from filenav import filetypes # File type names and mappings
-assert reload(filetypes) # Development/testing only
+##assert reload(filetypes) # Development/testing only
 
 def full_path(path):
     u"""Return absolute path with expanded ~s, envvars and symlinks.
@@ -56,8 +56,8 @@ DOCS_DIR = os.path.join(HOME_DIR, u"Documents")
 TEMP_DIR = os.path.join(DOCS_DIR, u"temp")
 APP_DIR = full_path(os.path.join(os.path.dirname(os.__file__), u".."))
 
-if not "PYTHONISTA_APP" in os.environ:
-    os.environ["PYTHONISTA_APP"] = APP_DIR
+if not "APPDIR" in os.environ:
+    os.environ["APPDIR"] = APP_DIR
 
 if not os.path.exists(TEMP_DIR):
     os.mkdir(TEMP_DIR)
@@ -232,9 +232,11 @@ class FileItem(object):
     
     def __eq__(self, other):
         # self == other
-        return (os.path.samefile(self.path, other.path)
-                if isinstance(other, FileItem)
-                else False)
+        return (
+            os.path.samefile(self.path, other.path)
+            if isinstance(other, FileItem)
+            else False
+        )
     
     def basename(self):
         u"""Like os.path.basename(self.path).
@@ -336,10 +338,11 @@ class FavoritesDataSource(object):
     from a JSON file.
     """
     
-    def __init__(self, src, app=None):
+    def __init__(self, app, src, tableview):
         # Init
-        self.src = full_path(src)
         self.app = app
+        self.src = full_path(src)
+        self.tableview = tableview
         self.reload()
     
     def reload(self):
@@ -407,23 +410,68 @@ class FavoritesDataSource(object):
         """
         if not tableview.editing:
             console.show_activity()
-            self.app.push_view(make_file_list(self.app, FileItem(self.entries[row][0])))
+            self.app.push_view(self.app.make_file_list(FileItem(self.entries[row][0])))
             console.hide_activity()
     
     def tableview_accessory_button_tapped(self, tableview, section, row):
         u"""Called when the user taps a row's accessory (i) button.
         """
         if not tableview.editing:
-            self.app.push_view(make_stat_view(self.app, FileItem(self.entries[row][0])))
+            self.app.push_view(self.app.make_stat_view(FileItem(self.entries[row][0])))
+    
+    def add_favorite(self, sender):
+        root = ui.View(name=u"Add Favorite")
+        root.width, root.height = 300, 140
+        
+        path = ui.TextField()
+        path.action = path.end_editing
+        path.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
+        path.autocorrection_type = False
+        path.clear_button_mode = "while_editing"
+        path.spellchecking_type = False
+        path.placeholder = "Path"
+        root.add_subview(path)
+        path.flex = "BW"
+        path.x, path.y = 10, 10
+        path.width, path.height = root.width - 20, 30
+        
+        desc = ui.TextField()
+        desc.action = desc.end_editing
+        desc.clear_button_mode = "while_editing"
+        desc.placeholder = "Description"
+        root.add_subview(desc)
+        path.flex = "BW"
+        desc.x, desc.y = 10, path.y + path.height + 10
+        desc.width, desc.height = root.width - 20, 30
+        
+        btn = ui.Button()
+        btn.title = "Done"
+        root.add_subview(btn)
+        btn.x, btn.y = 10, desc.y + desc.height + 10
+        btn.width, btn.height = root.width - 20, 50
+        
+        def _action(sender):
+            self.entries.append([path.text, desc.text])
+            self.tableview.insert_rows([len(self.entries) - 1])
+        
+            with open(self.src, "w") as f:
+                json.dump(self.entries, f, indent=4)
+            
+            root.close()
+        
+        btn.action = _action
+        
+        root.present("popover")
 
 class FileDataSource(object):
     u"""ui.TableView data source that generates a directory listing.
     """
     
-    def __init__(self, fi, app=None):
+    def __init__(self, app, fi, tableview):
         # Init
-        self.fi = fi
         self.app = app
+        self.fi = fi
+        self.tableview = tableview
         self.reload()
         self.lists = [self.folders, self.files]
     
@@ -500,7 +548,7 @@ class FileDataSource(object):
             fi = self.lists[section][row]
             if section == 0:
                 console.show_activity()
-                self.app.push_view(make_file_list(self.app, fi))
+                self.app.push_view(self.app.make_file_list(fi))
                 console.hide_activity()
             elif section == 1:
                 group = fi.constants.group
@@ -525,16 +573,20 @@ class FileDataSource(object):
         u"""Called when the user taps a row's accessory (i) button.
         """
         if not tableview.editing:
-            tableview.data_source.app.push_view(make_stat_view(tableview.data_source.app, self.lists[section][row]))
+            self.app.push_view(self.app.make_stat_view(self.lists[section][row]))
+    
+    def create_new(self, sender):
+        pass
 
 class StatDataSource(object):
     u"""ui.TableView data source that shows various file metadata and statistics.
     """
-    def __init__(self, fi, app=None):
+    def __init__(self, app, fi, tableview):
         # Init
         assert isinstance(fi, FileItem)
-        self.fi = fi
         self.app = app
+        self.fi = fi
+        self.tableview = tableview
         self.reload()
         self.lists = [
             ("Actions", self.actions),
@@ -728,11 +780,31 @@ class StatDataSource(object):
         """
         pass
 
+# FilenavApp Object
+########################################################################.......
+
+def toggle_edit_proxy(view):
+    u"""Returns a function that toggles edit mode for view.
+    This will swap view.(left|right)_button_items with view.delegate's
+    other_(left|right)_button_items.
+    (These attributes need to be on the delegate, because ui.TableView
+    does not allow setting arbitrary attributes.)
+    """
+    def _toggle_edit(sender):
+        view.left_button_items, view.delegate.other_left_button_items \
+        = view.delegate.other_left_button_items, view.left_button_items
+        
+        view.right_button_items, view.delegate.other_right_button_items \
+        = view.delegate.other_right_button_items, view.right_button_items
+        
+        view.set_editing(not view.editing)
+    return _toggle_edit
+
 class FilenavApp(object):
     u"""Base implementation of the filenav app controller.
-    This only defines the root attribute, which should be
-    the app's root view, and the close method, which should
-    close the app and perform any necessary cleanup tasks.
+    This base class defines methods (some of which are abstract) that
+    every filenav implementation should support. It also includes
+    utility methods to create preconfigured views bound to an app.
     """
     
     def __init__(self):
@@ -748,55 +820,82 @@ class FilenavApp(object):
         u"""Push a view onto the navigation stack.
         """
         raise NotImplementedError
+    
+    def pop_view(self):
+        u"""Pop the top view from the navigation stack.
+        """
+        raise NotImplementedError
+    
+    def make_favs_list(self, src):
+        # Create a ui.TableView containing a favorites list loaded from src
+        lst = ui.TableView(flex="WH")
+        # Allow single selection only when not editing
+        lst.allows_selection = True
+        lst.allows_multiple_selection = False
+        lst.allows_selection_during_editing = False
+        lst.allows_multiple_selection_during_editing = False
+        lst.background_color = 1.0
+        lst.data_source = lst.delegate = FavoritesDataSource(self, src, lst)
+        lst.name = u"Favorites"
+        lst.width = 300
+        
+        lst.left_button_items = ()
+        lst.delegate.other_left_button_items = (
+            ui.ButtonItem(
+                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
+                action=lst.delegate.add_favorite
+            ),
+        )
+        lst.right_button_items = (
+            ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
+        )
+        lst.delegate.other_right_button_items = (
+            ui.ButtonItem(title=u"Done", action=toggle_edit_proxy(lst)),
+        )
+        
+        return lst
+    
+    def make_file_list(self, fi):
+        # Create a ui.TableView containing a directory listing of path
+        lst = ui.TableView(flex="WH")
+        # Allow single selection only when not editing
+        lst.allows_selection = True
+        lst.allows_multiple_selection = False
+        lst.allows_selection_during_editing = False
+        lst.allows_multiple_selection_during_editing = False
+        lst.background_color = 1.0
+        lst.data_source = lst.delegate = FileDataSource(self, fi, lst)
+        lst.name = u"/" if fi.path == u"/" else fi.basename()
+        lst.width = 300
+        
+        lst.left_button_items = ()
+        lst.delegate.other_left_button_items = (
+            ui.ButtonItem(
+                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
+                action=lst.delegate.create_new
+            ),
+        )
+        lst.right_button_items = (
+            ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
+        )
+        lst.delegate.other_right_button_items = (
+            ui.ButtonItem(title=u"Done", action=toggle_edit_proxy(lst)),
+        )
+        
+        return lst
+    
+    def make_stat_view(self, fi):
+        # Create a ui.TableView containing stat data on path
+        lst = ui.TableView(flex="WH")
+        # Allow single selection only when not editing
+        lst.allows_selection = True
+        lst.allows_multiple_selection = False
+        lst.allows_selection_during_editing = False
+        lst.allows_multiple_selection_during_editing = False
+        lst.background_color = 1.0
+        lst.data_source = lst.delegate = StatDataSource(self, fi, lst)
+        lst.name = u"/" if fi.path == u"/" else fi.basename()
+        lst.width = 300
+        
+        return lst
 
-def toggle_edit_proxy(view):
-    u"""Returns a function that toggles edit mode for view.
-    """
-    def _toggle_edit(sender):
-        sender.title = u"Edit" if view.editing else u"Done"
-        view.set_editing(not view.editing)
-    return _toggle_edit
-
-def make_favs_list(app, src):
-    # Create a ui.TableView containing a favorites list loaded from src
-    lst = ui.TableView(flex="WH")
-    # Allow single selection only when not editing
-    lst.allows_selection = True
-    lst.allows_multiple_selection = False
-    lst.allows_selection_during_editing = False
-    lst.allows_multiple_selection_during_editing = False
-    lst.background_color = 1.0
-    lst.data_source = lst.delegate = FavoritesDataSource(src, app)
-    lst.name = u"Favorites"
-    lst.right_button_items = ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
-    lst.width = 300
-    return lst
-
-def make_file_list(app, fi):
-    # Create a ui.TableView containing a directory listing of path
-    lst = ui.TableView(flex="WH")
-    # Allow single selection only when not editing
-    lst.allows_selection = True
-    lst.allows_multiple_selection = False
-    lst.allows_selection_during_editing = False
-    lst.allows_multiple_selection_during_editing = False
-    lst.background_color = 1.0
-    lst.data_source = lst.delegate = FileDataSource(fi, app)
-    lst.name = u"/" if fi.path == u"/" else fi.basename()
-    lst.right_button_items = ui.ButtonItem(title=u"Edit", action=toggle_edit_proxy(lst)),
-    lst.width = 300
-    return lst
-
-def make_stat_view(app, fi):
-    # Create a ui.TableView containing stat data on path
-    lst = ui.TableView(flex="WH")
-    # Allow single selection only when not editing
-    lst.allows_selection = True
-    lst.allows_multiple_selection = False
-    lst.allows_selection_during_editing = False
-    lst.allows_multiple_selection_during_editing = False
-    lst.background_color = 1.0
-    lst.data_source = lst.delegate = StatDataSource(fi, app)
-    lst.name = u"/" if fi.path == u"/" else fi.basename()
-    lst.width = 300
-    return lst
