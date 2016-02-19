@@ -12,7 +12,15 @@
         "User Home"
     ], 
     [
+        "$RESOURCEDIR",
+        "Pythonista Resource Bundle"
+    ],
+    [
         "$APPDIR", 
         "Pythonista App Bundle"
+    ],
+    [
+        "$APPGROUPDIR",
+        "App Group shared files"
     ]
 ]

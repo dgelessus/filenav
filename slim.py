@@ -17,10 +17,14 @@ import sys      # For runtime arguments
 import ui       # Guess why
 
 from filenav import common
-##assert reload(common) # Development/testing only
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 MODE = "panel"
-##MODE = "popover" # For testing on iPad
+MODE = "popover" # For testing on iPad
 
 class SlimFilenavApp(common.FilenavApp):
     def push_view(self, view):

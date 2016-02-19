@@ -53,6 +53,7 @@ FILE_EXTS = {
     "dotx":          "MS Word Template (XML-based)",
     "exe":           "Windows Executable",
     "fon":           "Bitmap Font",
+    "framework":     "Application Framework",
     "gif":           "GIF Image",
     "git":           "Git Data",
     "gitignore":     "Git File Ignore List",
@@ -138,7 +139,7 @@ FILE_EXTS = {
 # One extension should *never* appear in more than one group. Results are
 # otherwise unpredictable due to the unordered nature of dicts.
 _TYPE_GROUPS = {
-    "app":       "app exe nib pytheme pyui",
+    "app":       "app exe framework nib pytheme pyui",
     "archive":   "bundle bz2 cpio cpgz dmg gz gzip rar tar tgz z zip",
     "audio":     "aac aif aiff caf m4a m4r mp3 ogg wav",
     "code":      """
@@ -162,35 +163,29 @@ _TYPE_GROUPS = {
 }
 # Flip the dict and split extension strings.
 TYPE_GROUPS = {}
-for group, exts in _TYPE_GROUPS.iteritems():
+for group, exts in _TYPE_GROUPS.items():
     TYPE_GROUPS.update({ext: group for ext in exts.split()})
 
 # Maps major type groups to names and icon paths.
 GROUP_ICONS = {
-    "app":       ("Application",     "../FileUI"),
-    "archive":   ("Archive",         "ionicons-filing-32"),
+    "app":       ("Application",     "ionicons-ios7-browsers-32"),
+    "archive":   ("Archive",         "ionicons-ios7-briefcase-32"),
     "audio":     ("Audio File",      "ionicons-ios7-musical-notes-32"),
-    "code":      ("Source Code",     "../FilePY"),
+    "code":      ("Source Code",     "ionicons-document-text-32"),
     "code_tags": ("Source Code",     "ionicons-code-32"),
     "data":      ("Data File",       "ionicons-social-buffer-32"),
     "file":      ("File",            "ionicons-document-32"),
-    "folder":    ("Folder",          "ionicons-folder-32"),
-    "font":      ("Font File",       "../fonts-selected"),
+    "folder":    ("Folder",          "ionicons-ios7-folder-32"),
+    "font":      ("Font File",       "ionicons-ios7-printer-32"),
     "git":       (None,              "ionicons-social-github-32"),
     "image":     ("Image File",      "ionicons-image-32"),
     "text":      ("Plain Text File", "ionicons-document-text-32"),
-    "trash":     ("Trash",           "ionicons-folder-32"),
+    "trash":     ("Trash",           "ionicons-ios7-trash-32"),
     "video":     ("Video File",      "ionicons-ios7-film-outline-32"),
 }
 
-# Trash icon only exists in 1.6
-try:
-    import dialogs
-except ImportError:
-    pass
-else:
-    GROUP_ICONS["trash"] = ("Trash", "../FolderTrash")
+FOLDERS_WITH_ICONS = {"app", "bundle", "framework", "git", "trash"}
 
 # Replace icon paths with ui.Image instances.
 GROUP_ICONS = {k: (v[0], ui.Image.named(v[1]))
-               for k, v in GROUP_ICONS.iteritems()}
+               for k, v in GROUP_ICONS.items()}

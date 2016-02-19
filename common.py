@@ -29,7 +29,13 @@ import ui          # For various utility functions
 import webbrowser  # To display HTML files
 
 from filenav import filetypes # File type names and mappings
-##assert reload(filetypes) # Development/testing only
+
+try:
+    import objc_util
+except ImportError:
+    NEW_EDITOR_MODULE = False
+else:
+    NEW_EDITOR_MODULE = True
 
 def full_path(path):
     u"""Return absolute path with expanded ~s, envvars and symlinks.
@@ -54,10 +60,23 @@ ANIM_DELAY = 0.7
 HOME_DIR = full_path(u"~")
 DOCS_DIR = os.path.join(HOME_DIR, u"Documents")
 TEMP_DIR = os.path.join(DOCS_DIR, u"temp")
-APP_DIR = full_path(os.path.join(os.path.dirname(os.__file__), u".."))
+RESOURCE_DIR = full_path(os.path.join(os.path.dirname(os.__file__), u".."))
+APP_DIR = full_path(os.path.dirname(sys.executable))
+
+APP_GROUP_DIR = (
+    os.path.dirname(HOME_DIR)
+    if os.path.basename(HOME_DIR) == u"Pythonista3"
+    else HOME_DIR
+)
+
+if not "RESOURCEDIR" in os.environ:
+    os.environ["RESOURCEDIR"] = RESOURCE_DIR
 
 if not "APPDIR" in os.environ:
     os.environ["APPDIR"] = APP_DIR
+
+if not "APPGROUPDIR" in os.environ:
+    os.environ["APPGROUPDIR"] = APP_GROUP_DIR
 
 if not os.path.exists(TEMP_DIR):
     os.mkdir(TEMP_DIR)
@@ -108,7 +127,7 @@ def rel_to_app(path):
 def open_path(path):
     u"""Open the given file in the Pythonista editor, if possible
     """
-    editor.open_file(rel_to_docs(path))
+    editor.open_file(path if NEW_EDITOR_MODULE else rel_to_docs(path))
     console.hide_output()
 
 def _thumb_for_path(path):
@@ -131,7 +150,7 @@ def get_thumbnail(path):
     try:
         return _thumb_for_path(path)
     except IOError as err:
-        if not err.message == "broken data stream when reading image file":
+        if not err.args[0] == "broken data stream when reading image file":
             return None
         tmp_file = os.path.join(TEMP_DIR, u"filenav-tmp.png")
         # Write image as png using ui module
@@ -176,7 +195,7 @@ def get_fileinfo(path):
             desc = filetypes.GROUP_ICONS[basegroup][0]
     
     # Folders should only get certain file types applied
-    if basegroup == "folder" and ext not in ("app", "bundle", "git", "trash"):
+    if basegroup == "folder" and ext not in filetypes.FOLDERS_WITH_ICONS:
         desc, icon = filetypes.GROUP_ICONS[basegroup]
     
     return FileInfo(dir, name, nameparts, ext, group, desc, icon)
@@ -205,8 +224,6 @@ class FileItem(object):
         u"""Reload the FileItem's non-constant data by re-
         examining the location referenced by self.path.
         """
-        assert isinstance(self.path, basestring)
-        
         self.constants = get_fileinfo(self.path)
         self.icon = self.constants.icon
         self.icon_cached = False
@@ -842,7 +859,7 @@ class FilenavApp(object):
         lst.left_button_items = ()
         lst.delegate.other_left_button_items = (
             ui.ButtonItem(
-                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
+                image=ui.Image.named(u"../Add"),
                 action=lst.delegate.add_favorite
             ),
         )
@@ -871,7 +888,7 @@ class FilenavApp(object):
         lst.left_button_items = ()
         lst.delegate.other_left_button_items = (
             ui.ButtonItem(
-                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
+                image=ui.Image.named(u"../Add"),
                 action=lst.delegate.create_new
             ),
         )
@@ -898,4 +915,3 @@ class FilenavApp(object):
         lst.width = 300
         
         return lst
-

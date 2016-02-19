@@ -17,7 +17,11 @@ import sys      # For runtime arguments
 import ui       # Guess why
 
 from filenav import common
-##assert reload(common) # Development/testing only
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 MODE = "panel"
 
@@ -31,7 +35,7 @@ class FullFilenavApp(common.FilenavApp):
         self.scroll.shows_vertical_scroll_indicator = False
         self.scroll.flex = "WH"
         self.root.add_subview(self.scroll)
-        self.scroll.bounds = self.root.bounds
+        self.scroll.bounds = tuple(self.root.bounds)
         self.scroll.content_size = 0, self.scroll.height
         
         self.view_stack = []
