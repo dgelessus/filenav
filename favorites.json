@@ -21,6 +21,10 @@
     ],
     [
         "$APPGROUPDIR",
-        "App Group shared files"
+        "App Group Shared Files"
+    ],
+    [
+        "/",
+        "File System Root"
     ]
 ]

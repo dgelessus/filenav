@@ -426,7 +426,7 @@ class FavoritesDataSource(object):
         u"""Called when the user selects a row.
         """
         if not tableview.editing:
-            console.show_activity()
+            console.show_activity("Loading file list...")
             self.app.push_view(self.app.make_file_list(FileItem(self.entries[row][0])))
             console.hide_activity()
     
@@ -564,7 +564,7 @@ class FileDataSource(object):
         if not tableview.editing:
             fi = self.lists[section][row]
             if section == 0:
-                console.show_activity()
+                console.show_activity("Loading file list...")
                 self.app.push_view(self.app.make_file_list(fi))
                 console.hide_activity()
             elif section == 1:
