@@ -24,7 +24,7 @@ except NameError:
     unicode = str
 
 MODE = "panel"
-MODE = "popover" # For testing on iPad
+##MODE = "popover" # For testing on iPad
 
 class SlimFilenavApp(common.FilenavApp):
     def push_view(self, view):

@@ -859,7 +859,7 @@ class FilenavApp(object):
         lst.left_button_items = ()
         lst.delegate.other_left_button_items = (
             ui.ButtonItem(
-                image=ui.Image.named(u"../Add"),
+                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
                 action=lst.delegate.add_favorite
             ),
         )
@@ -888,7 +888,7 @@ class FilenavApp(object):
         lst.left_button_items = ()
         lst.delegate.other_left_button_items = (
             ui.ButtonItem(
-                image=ui.Image.named(u"../Add"),
+                image=ui.Image.named(u"ionicons-ios7-plus-empty-32"),
                 action=lst.delegate.create_new
             ),
         )
